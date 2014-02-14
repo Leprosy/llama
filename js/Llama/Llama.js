@@ -73,6 +73,7 @@ Llama.Application = function LlamaApplication(options) {
  */
 Llama.Controller = function LlamaController(opt) {
     this.views = {};
+    this.app = null; // parent app? render purposes?
     $.extend(this, opt);
 }
 /* Llama.Controller.prototype.getView = function(src, callback) {
