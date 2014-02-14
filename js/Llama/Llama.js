@@ -51,7 +51,7 @@ Llama.Application = function LlamaApplication(options) {
                     delete _this._loaded;
                     delete _this._controllers;
 
-                    if (typeof _this.ready === 'function'){                        
+                    if (typeof _this.ready === 'function') {
                         _this.ready();
                     };
                 }
@@ -59,9 +59,19 @@ Llama.Application = function LlamaApplication(options) {
         }
     }
 
+    /* Attach router */
+    window.onpopstate = function(ev) {
+        if (window.location.hash != '') {
+            var status = window.location.hash.substr(1).split('/');
+
+            /* Simpler match */
+            app.controllers[status[0]][status[1]]();
+            return false;
+        }
+    };
+
     /* Done */
     console.log('Application created');
-    console.groupEnd();
 };
 
 
