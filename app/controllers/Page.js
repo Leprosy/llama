@@ -1,5 +1,5 @@
 app.controllers.Page = new Llama.Controller({
-    index: function() {
-        console.log('Page/index');
+    index: function(data) {
+        console.log('Page/index => ', data);
     }
 });

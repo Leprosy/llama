@@ -1,9 +1,9 @@
 app.controllers.Foo = new Llama.Controller({
-    index: function() {
-        console.log('Foo/index');
+    index: function(data) {
+        console.log(data);
     },
 
-    bar: function() {
-        console.log('Foo/bar');
+    bar: function(data) {
+        console.log('Foo/bar => ', data);
     }
 });
