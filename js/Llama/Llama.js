@@ -19,8 +19,6 @@ var Llama = {
 
 
 
-
-
 /**
  * Application
  */
@@ -101,8 +99,6 @@ Llama.Application = function LlamaApplication(options) {
 
 
 
-
-
 /**
  * Controller
  */
@@ -111,50 +107,6 @@ Llama.Controller = function LlamaController(opt) {
     this.app = null; // parent app? render purposes?
     $.extend(this, opt);
 }
-/* Llama.Controller.prototype.getView = function(src, callback) {
-    if (typeof this.views[src] == 'undefined') {
-        var _this = this;
-        var _name = src;
-        src = this.app.path + "views/" + this.name + "/" + src + ".tpl"
-        console.group('Including view in ' + src);
-        console.log('Including view ' + src);
-    
-        $.ajax(src, {
-            complete: function(data, msg) {
-                if (msg == 'success') {
-                    var view = new Llama.View(data.responseText, _this)
-                    _this.views[_name] = view;
-                    callback(view);
-                    console.log('View ' + src + ' included');
-                }
-            } 
-        });
-
-        console.groupEnd();
-    } else {
-        callback(this.views[src]);
-    }
-} */
-
-
-
-
-
-/**
- * View
- */
-Llama.View = function LlamaView(data, controller) {
-    this.template = data;
-    this.handlebars = Handlebars.compile(data);
-    this.controller = controller;
-}
-Llama.View.prototype.render = function(data) {
-    $('#' + this.controller.app.renderTo).html(
-        this.handlebars(data)
-    );
-}
-
-
 
 
 
@@ -198,8 +150,6 @@ Llama.Router.prototype.match = function(str) {
         return false;
     }
 }
-
-
 
 
 
