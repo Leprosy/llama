@@ -3,14 +3,12 @@ var app = new Llama.Application({
     name: 'testApp',
     controllers: ['Page', 'Foo'],
     routes: {
-        ':controller/:action/:data': {
-            foo: 'bar',
-            page: '1'
-        },
-        'crap': {
+        ':controller/:action': {},
+        ':controller/:action/:data': {},
+        'test': {
             controller: 'Foo',
             action: 'bar',
-            crappy: true,
+            boolean: true,
             foo: 'baz'
         }
     },

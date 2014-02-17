@@ -83,13 +83,24 @@ Llama.Application = function LlamaApplication(options) {
     var _this = this;
     window.onpopstate = function(ev) {
         if (window.location.hash != '') {
+            var success = false;
             var request = false;
+            var url = window.location.hash.substr(1);
 
             for (i in _this.routes) {
-                if (request = _this.routes[i].match(window.location.hash.substr(1))) {
-                    _this.controllers[request.controller][request.action](request);
+                if (request = _this.routes[i].match(url)) {
+                    var action = _this.controllers[request.controller][request.action];
+
+                    if (typeof action === 'function') {
+                        _this.controllers[request.controller][request.action](request);
+                        success = true;
+                    }
                 }
-            }            
+            }
+
+            if (!success) {
+                console.log('URL has no matched route');
+            }
         }
     };
 
