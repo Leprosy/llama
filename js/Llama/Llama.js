@@ -3,17 +3,40 @@
  */
 var Llama = {
     include: function(src, callback) {
+        console.log('Including ' + src);
+
         /* Create the script object */
         var script = document.createElement('script');
-        script.src = src;
-        script.onload = function(ev) {
-            if (typeof callback === 'function') {
-                callback();
-            }
-        };
 
-        /* Put it on the DOM */
-        document.getElementsByTagName('head')[0].appendChild(script);
+        if (src.match(/\.js$/i)) {
+            script.src = src;
+            script.onload = function(ev) {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            };
+
+            /* Put it on the DOM */
+            document.getElementsByTagName('head')[0].appendChild(script);
+        } else {
+            script.id = src.replace(/\//g, '-').replace(/.tpl/, '');
+
+            $.ajax(src, {
+                complete: function(data, msg) {
+                    if (msg == 'success') {
+                        script.type = 'text/plain';
+                        script.innerHTML = data.responseText;
+
+                        /* Put it on the DOM */
+                        document.getElementsByTagName('head')[0].appendChild(script);
+
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                    }
+                }
+            });
+        }
     }
 };
 
@@ -30,40 +53,7 @@ Llama.Application = function LlamaApplication(options) {
     this.renderTo = 'app';
     $.extend(this, options);
 
-    /* Instancing the app controllers */
-    if (typeof this.controllers == 'string') {
-        this.controllers = [this.controllers];
-    }
-
-    this._controllers = this.controllers;
-    this._loaded = 0;
-    this.controllers = {};
-    var controllerPath = this.path + 'controllers/';
-
-    if (typeof this._controllers === 'object') {
-        for (i in this._controllers) {
-            var _this = this;
-            Llama.include(controllerPath + this._controllers[i], function() {
-                _this._loaded++;
-
-                if (_this._loaded == _this._controllers.length) {
-                    /* Finished loaded the controllers, fire up the ready event */
-                    delete _this._loaded;
-                    delete _this._controllers;
-
-                    if (typeof _this.ready === 'function') {
-                        /* Attach parent */
-                        for (i in _this.controllers) {
-                            _this.controllers[i].app = _this;
-                        }
-
-                        /* Fire ready event */
-                        _this.ready();
-                    };
-                }
-            });
-        }
-    }
+    var _this = this;
 
     /* Attach routers */
     this._routes = this.routes;
@@ -74,13 +64,11 @@ Llama.Application = function LlamaApplication(options) {
             var key = Object.keys(this._routes)[i];
             var router = new Llama.Router(key, this._routes[key]);
             this.routes.push(router);
-            console.log(router);
         }
     }
 
     delete this._routes;
 
-    var _this = this;
     window.onpopstate = function(ev) {
         if (window.location.hash != '') {
             var success = false;
@@ -104,20 +92,102 @@ Llama.Application = function LlamaApplication(options) {
         }
     };
 
+    /* Instancing the app controllers */
+    if (typeof this.controllers == 'string') {
+        this.controllers = [this.controllers];
+    }
+
+    this._controllers = this.controllers;
+    this._loaded = 0;
+    this.controllers = {};
+    var controllerPath = this.path + 'controllers/';
+
+    if (typeof this._controllers === 'object') {
+        var _i = 0;
+
+        for (i in this._controllers) {
+            Llama.include(controllerPath + this._controllers[i] + '.js', function() {
+                _this._loaded++;
+
+                if (_this._loaded == _this._controllers.length) {
+                    // Finished loaded the controllers, fire up the ready event 
+                    delete _this._loaded;
+                    delete _this._controllers;
+
+                    if (typeof _this.ready === 'function') {
+                        // Fire ready event 
+                        _this.ready();
+                    };
+                }
+            });
+        }
+    }
+
     /* Done */
     console.log('Application created');
 };
-
+Llama.Application.prototype.createController = function(name, obj) {
+    obj.app = this;
+    obj.name = name;
+    var controller = new Llama.Controller(obj);
+    this.controllers[name] = controller;
+}
 
 
 /**
  * Controller
  */
 Llama.Controller = function LlamaController(opt) {
+    /* Create object */
+    this.isReady = false;
     this.views = {};
     this.app = null; // parent app? render purposes?
+    this.ready = function() {
+        console.log(this, 'ready');
+    }
+
     $.extend(this, opt);
+
+    /* Creating preloaded views */
+    if (typeof this.views == 'string') {
+        this.views = [this.views];
+    }
+
+    var _this = this;
+    var viewPath = this.app.path + 'views/';
+    this._views = this.views;
+    this._loaded = 0;
+    this.views = {};
+
+    console.log(viewPath);
+
+    if (typeof this._views === 'object') {
+        var _i = 0;
+        var tplPref = this.app.path.replace('/', '') + '-views-';
+
+        for (i in this._views) {
+            Llama.include(viewPath + this._views[i] + '.tpl', function() {
+                var tplName = tplPref + _this._views[_i];
+                _this.views[_this._views[_i]] = tplName;
+
+                _i++;
+            });
+        }
+    }
+
+    /* Controller ready */
+    this.isReady = true;
+    this.ready();
 }
+/* Llama.Controller.prototype.getView = function(view) {
+    if (typeof this.views[view] === 'undefined') {
+        Llama.include(this.app.path + 'views/' + view + '.tpl'  , function() {
+            console.log('FUCK YOU ALL');
+        })
+    }
+
+    //return this.views[view];
+} */
 
 
 
@@ -163,6 +233,6 @@ Llama.Router.prototype.match = function(str) {
 }
 
 
-
+/* Dependencies */
 /* End */
 console.debug('Llama is ready');
