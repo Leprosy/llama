@@ -14,6 +14,6 @@ var app = new Llama.Application({
     },
 
     ready: function() {
-        app.controllers.Page.index();
+        console.log('READY')
     }
 });

@@ -99,7 +99,6 @@ Llama.Application = function LlamaApplication(options) {
     }
 
     this._controllers = this.controllers;
-    this._loaded = 0;
     this.controllers = {};
     var controllerPath = this.path + 'controllers/';
 
@@ -108,17 +107,11 @@ Llama.Application = function LlamaApplication(options) {
 
         for (i in this._controllers) {
             Llama.include(controllerPath + this._controllers[i] + '.js', function() {
-                _this._loaded++;
+                _i++;
 
-                if (_this._loaded == _this._controllers.length) {
+                if (_i == _this._controllers.length) {
                     // Finished loaded the controllers, fire up the ready event 
-                    delete _this._loaded;
                     delete _this._controllers;
-
-                    if (typeof _this.ready === 'function') {
-                        // Fire ready event 
-                        _this.ready();
-                    };
                 }
             });
         }
@@ -157,7 +150,6 @@ Llama.Controller = function LlamaController(opt) {
     var _this = this;
     var viewPath = this.app.path + 'views/';
     this._views = this.views;
-    this._loaded = 0;
     this.views = {};
 
     console.log(viewPath);
@@ -170,15 +162,17 @@ Llama.Controller = function LlamaController(opt) {
             Llama.include(viewPath + this._views[i] + '.tpl', function() {
                 var tplName = tplPref + _this._views[_i];
                 _this.views[_this._views[_i]] = Handlebars.compile($('#' + tplName).html());
-
                 _i++;
+
+                if (_i == _this._views.length) {
+                    // Finished loaded the controllers, fire up the ready event 
+                    delete _this._views;
+                    _this.isReady = true;
+                    _this.ready();
+                }
             });
         }
-    }
-
-    /* Controller ready */
-    this.isReady = true;
-    this.ready();
+    }    
 }
 Llama.Controller.prototype.render = function(tpl, data) {
     if (typeof data === 'undefined') {
