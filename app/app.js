@@ -1,7 +1,7 @@
 /* Create app */
 var app = new Llama.Application({
     name: 'LeproApp',
-    controllers: ['Page'], //, 'Foo'],
+    controllers: ['Page', 'Foo'],
     routes: {
         ':controller/:action': {},
         ':controller/:action/:data': {},

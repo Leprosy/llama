@@ -2,6 +2,11 @@ app.createController('Page', {
     views: ['pageindex'],
 
     index: function(data) {
-        console.log('Page/index => ', data);
+        this.render('pageindex', {
+            title: 'Page controller, executing "index" action',
+            route: 'Page/index',
+            to: '#Foo/index',
+            content: 'This is the content rendered by the Page controller, doing the action "index".'
+        })
     }
 });
