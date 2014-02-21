@@ -118,7 +118,7 @@ Llama.Application = function LlamaApplication(options) {
     }
 
     /* Done */
-    console.log('Application created');
+    console.debug('Application created');
 };
 Llama.Application.prototype.createController = function(name, obj) {
     obj.app = this;
@@ -126,6 +126,7 @@ Llama.Application.prototype.createController = function(name, obj) {
     var controller = new Llama.Controller(obj);
     this.controllers[name] = controller;
 }
+
 
 
 /**
@@ -136,9 +137,6 @@ Llama.Controller = function LlamaController(opt) {
     this.isReady = false;
     this.views = {};
     this.app = null; // parent app? render purposes?
-    this.ready = function() {
-        console.log(this, 'ready');
-    }
 
     $.extend(this, opt);
 
@@ -168,7 +166,7 @@ Llama.Controller = function LlamaController(opt) {
                     // Finished loaded the controllers, fire up the ready event 
                     delete _this._views;
                     _this.isReady = true;
-                    _this.ready();
+                    _this._ready();
                 }
             });
         }
@@ -181,6 +179,27 @@ Llama.Controller.prototype.render = function(tpl, data) {
 
     var tpl = this.views[tpl];
     $(this.app.renderTo).html(tpl(data));
+}
+Llama.Controller.prototype._ready = function(data) {
+    console.log(this, 'ready');
+
+    /* Run the ready function(if exists) */
+    if (typeof this.ready === 'function') {
+        this.ready(data);
+    }
+
+    /* Check application for readyness and fire ready event of the app */
+    for (i in this.app.controllers) {
+        if (!this.app.controllers[i].isReady) {
+            return false;
+        }
+    }
+
+    console.debug('Application ready');
+
+    if (typeof this.app.ready === 'function') {
+        this.app.ready();
+    }
 }
 
 
@@ -225,6 +244,7 @@ Llama.Router.prototype.match = function(str) {
         return false;
     }
 }
+
 
 
 /* End */

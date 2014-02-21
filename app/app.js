@@ -14,6 +14,6 @@ var app = new Llama.Application({
     },
 
     ready: function() {
-        console.log('READY')
+        console.log('LeproApp ready');
     }
 });
