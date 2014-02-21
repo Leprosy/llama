@@ -1,4 +1,7 @@
 app.createController('Page', {
+    ready: function() {
+        console.log('Page controller is ready');
+    },
     views: ['pageindex'],
 
     index: function(data) {

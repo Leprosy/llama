@@ -1,6 +1,10 @@
 app.createController('Foo', {
     views: ['pageindex'],
 
+    ready: function() {
+        console.log('Foo controller is ready');
+    },
+
     index: function(data) {
         this.render('pageindex', {
             title: 'Foo controller, executing "index" action',
