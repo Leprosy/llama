@@ -3,7 +3,7 @@
  */
 var Llama = {
     include: function(src, callback) {
-        console.log('Including ' + src);
+        console.debug('Llama: Including ' + src);
 
         /* Create the script object */
         var script = document.createElement('script');
@@ -51,6 +51,7 @@ Llama.Application = function LlamaApplication(options) {
     this.name = 'MyApp';
     this.controllers = 'Index';
     this.renderTo = '#app';
+    this.routes = {':controller/:action': {}, ':controller/:action/:data': {}};
     $.extend(this, options);
 
     var _this = this;
@@ -60,38 +61,16 @@ Llama.Application = function LlamaApplication(options) {
     this.routes = [];
 
     if (typeof this._routes === 'object') {
-        for (i in Object.keys(this._routes)) {
-            var key = Object.keys(this._routes)[i];
-            var router = new Llama.Router(key, this._routes[key]);
+        var keys = Object.keys(this._routes);
+
+        for (i in keys) {
+            var key = keys[i];
+            var router = new Llama.Router(this, key, this._routes[key]);
             this.routes.push(router);
         }
     }
 
     delete this._routes;
-
-    window.onpopstate = function(ev) {
-        if (window.location.hash != '') {
-            var success = false;
-            var request = false;
-            var url = window.location.hash.substr(1);
-
-            for (i in _this.routes) {
-                if (request = _this.routes[i].match(url)) {
-                    var action = _this.controllers[request.controller][request.action];
-
-                    if (typeof action === 'function') {
-                        console.debug('Executing', request);
-                        _this.controllers[request.controller][request.action](request);
-                        success = true;
-                    }
-                }
-            }
-
-            if (!success) {
-                console.log('URL has no matched route');
-            }
-        }
-    };
 
     /* Instancing the app controllers */
     if (typeof this.controllers == 'string') {
@@ -110,7 +89,7 @@ Llama.Application = function LlamaApplication(options) {
                 _i++;
 
                 if (_i == _this._controllers.length) {
-                    // Finished loaded the controllers, fire up the ready event 
+                    // Finished loaded the controllers
                     delete _this._controllers;
                 }
             });
@@ -118,13 +97,63 @@ Llama.Application = function LlamaApplication(options) {
     }
 
     /* Done */
-    console.debug('Application created');
+    console.info('Llama: Application created');
 };
+
+Llama.Application.prototype._ready = function(name, obj) {
+    console.info('Llama: Application ready');
+
+    var _this = this;
+
+    /* Attach url change event */
+    window.onpopstate = function(ev) {
+        _this.processUrl();
+    };
+
+    /* Fire custom app ready event */
+    if (typeof this.ready === 'function') {
+        this.ready();
+    }
+
+    /* App ready, check if URL has a route */
+    this.processUrl();
+};
+
 Llama.Application.prototype.createController = function(name, obj) {
     obj.app = this;
     obj.name = name;
     var controller = new Llama.Controller(obj);
     this.controllers[name] = controller;
+};
+
+Llama.Application.prototype.isReady = function() {
+    var keys = Object.keys(this.controllers), i;
+
+    for (i = 0; i < keys.length; ++i) {
+        if (!this.controllers[keys[i]].isReady) {
+            return false;
+        }
+    }
+
+    return true;
+};
+
+Llama.Application.prototype.processUrl = function() {
+    if (window.location.hash != '') {
+        var _this = this;
+        var success = false;
+        var url = window.location.hash.substr(1);
+
+        for (i in _this.routes) {
+            if (success = _this.routes[i].match(url)) {
+                break;
+            }
+        }
+
+        if (!success) {
+            console.warn('Llama: URL has no matched route');
+        }
+    }
 }
 
 
@@ -150,8 +179,6 @@ Llama.Controller = function LlamaController(opt) {
     this._views = this.views;
     this.views = {};
 
-    console.log(viewPath);
-
     if (typeof this._views === 'object') {
         var _i = 0;
         var tplPref = this.app.path.replace('/', '') + '-views-';
@@ -163,7 +190,7 @@ Llama.Controller = function LlamaController(opt) {
                 _i++;
 
                 if (_i == _this._views.length) {
-                    // Finished loaded the controllers, fire up the ready event 
+                    // Finished loaded the controllers, fire up the ready event of controller
                     delete _this._views;
                     _this.isReady = true;
                     _this._ready();
@@ -172,6 +199,7 @@ Llama.Controller = function LlamaController(opt) {
         }
     }    
 }
+
 Llama.Controller.prototype.render = function(tpl, data) {
     if (typeof data === 'undefined') {
         data = {};
@@ -179,9 +207,10 @@ Llama.Controller.prototype.render = function(tpl, data) {
 
     var tpl = this.views[tpl];
     $(this.app.renderTo).html(tpl(data));
-}
+};
+
 Llama.Controller.prototype._ready = function(data) {
-    console.log(this, 'ready');
+    console.info('Llama: Controller ' + this.name + ' ready');
 
     /* Run the ready function(if exists) */
     if (typeof this.ready === 'function') {
@@ -189,28 +218,22 @@ Llama.Controller.prototype._ready = function(data) {
     }
 
     /* Check application for readyness and fire ready event of the app */
-    for (i in this.app.controllers) {
-        if (!this.app.controllers[i].isReady) {
-            return false;
-        }
+    if (this.app.isReady()) {
+        this.app._ready();
     }
-
-    console.debug('Application ready');
-
-    if (typeof this.app.ready === 'function') {
-        this.app.ready();
-    }
-}
+};
 
 
 
 /**
  * Router
  */
-Llama.Router = function LlamaRouter(path, rules) {
+Llama.Router = function LlamaRouter(app, path, rules) {
+    this.app = app;
     this.path = path;
     this.rules = rules;
-}
+};
+
 Llama.Router.prototype.match = function(str) {
     /* Invalid paths filtered */
     if (!str.length) {
@@ -220,10 +243,11 @@ Llama.Router.prototype.match = function(str) {
     /* Process path and match with rules */
     str = str.split('/');
     var path = this.path.split('/');
-    var obj = {};
+    var request = {};
+    var keys = Object.keys(this.rules);
 
-    for (i in Object.keys(this.rules)) {
-        obj[Object.keys(this.rules)[i]] = this.rules[Object.keys(this.rules)[i]];
+    for (i in keys) {
+        request[keys[i]] = this.rules[keys[i]];
     }
 
     if (path.length == str.length) {
@@ -233,19 +257,33 @@ Llama.Router.prototype.match = function(str) {
                     return false;
                 }
             } else if (str[i] != ''){
-                obj[path[i].substr(1)] = str[i];
+                request[path[i].substr(1)] = str[i];
             } else {
                 return false;
             }
         }
 
-        return obj;
+        /* Process request */
+        if (typeof this.app.controllers[request.controller] === 'undefined') {
+            console.warn('LLama: Invalid controller in route', request.controller);
+            return false;
+        }
+
+        if (typeof this.app.controllers[request.controller][request.action] === 'function') {
+            console.log('Llama: Executing', request);
+            this.app.controllers[request.controller][request.action](request);
+        } else {
+            console.warn('LLama: Invalid action in route', request.action);
+            return false;            
+        }
+
+        return true;
     } else {
         return false;
     }
-}
+};
 
 
 
 /* End */
-console.debug('Llama is ready');
+console.info('Llama: Library loaded');
