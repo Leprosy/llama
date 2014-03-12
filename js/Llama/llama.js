@@ -183,19 +183,25 @@ Llama.Controller = function LlamaController(opt) {
         var _i = 0;
         var tplPref = this.app.path.replace('/', '') + '-views-';
 
-        for (i in this._views) {
-            Llama.include(viewPath + this._views[i] + '.tpl', function() {
-                var tplName = tplPref + _this._views[_i];
-                _this.views[_this._views[_i]] = Handlebars.compile($('#' + tplName).html());
-                _i++;
+        if (this._views.length > 0) {
+            for (i in this._views) {
+                Llama.include(viewPath + this._views[i] + '.tpl', function() {
+                    var tplName = tplPref + _this._views[_i];
+                    _this.views[_this._views[_i]] = Handlebars.compile($('#' + tplName).html());
+                    _i++;
 
-                if (_i == _this._views.length) {
-                    // Finished loaded the controllers, fire up the ready event of controller
-                    delete _this._views;
-                    _this.isReady = true;
-                    _this._ready();
-                }
-            });
+                    if (_i == _this._views.length) {
+                        // Finished loaded the controllers, fire up the ready event of controller
+                        delete _this._views;
+                        _this.isReady = true;
+                        _this._ready();
+                    }
+                });
+            }
+        } else {
+            delete _this._views;
+            _this.isReady = true;
+            _this._ready();
         }
     }    
 }
